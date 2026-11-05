@@ -3,8 +3,7 @@
 Welcome to my first open-source project! I built this interactive single-page portfolio website using code and AI tools.
 
 ## 🚀 Live Site
-* Check out the live deployment here: [https://netlify.app](https://netlify.app)
-
+Check out the live deployment here: [https://mazin-codes.netlify.app](https://mazin-codes.netlify.app)
 ## 🛠️ Tech Stack & Features
 - **HTML5:** Page structures, layout nodes, and text elements.
 - **CSS3:** Clean visual typography, layout cards, and border styling.
