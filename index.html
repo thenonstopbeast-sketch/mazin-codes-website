@@ -11,6 +11,7 @@
             padding: 0;
             background-color: #f0f4f8;
             color: #1a202c;
+            transition: background-color 0.3s, color 0.3s;
         }
         header {
             background-color: #6b46c1;
@@ -25,6 +26,7 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s, color 0.3s;
         }
         button {
             background-color: #38a169;
@@ -44,18 +46,21 @@
 <body>
 
     <header>
-        <h1>Welcome, Mazin!</h1>
+        <h1>Welcome to Mohd Mazin's Site</h1>
         <p>Learning how to code step-by-step!</p>
     </header>
 
     <div class="main-content">
+        <!-- Dark Mode Toggle Button -->
+        <button onclick="toggleDarkMode()" style="background-color: #4a5568; margin-bottom: 20px;">Toggle Dark Mode</button>
+
         <!-- Profile Picture Section -->
         <div style="text-align: center; margin: 20px 0;">
             <img src="avatar.png" 
                  alt="Profile Picture" 
                  style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid #6b46c1; object-fit: cover;">
         </div>
-        <button onclick="toggleDarkMode()" style="background-color: #4a5568; margin-bottom: 20px;">Toggle Dark Mode</button>
+
         <h2>About This Project</h2>
         <p>I am building this page locally on my Windows computer using HTML for structure, CSS for styling, and JavaScript for interactive elements.</p>
         
@@ -63,50 +68,29 @@
         <p>Instead of memorizing commands, I can ask the AI to change styles, add dynamic components, or fix errors instantly.</p>
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-<h2>Contact Me</h2>
+
+        <h2>Contact Me</h2>
         <form name="contact" method="POST" data-netlify="true" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
             <input type="text" name="name" placeholder="Your Name" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;" required>
             <textarea name="message" placeholder="Your Message" rows="4" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; resize: none;" required></textarea>
-            <button type="submit" style="background-color: #3182ce; width: fit-content; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer;">Send Message</button>
+            <button type="submit" style="background-color: #3182ce; width: fit-content;">Send Message</button>
         </form>
 
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
         <h2>Interactive Test</h2>
         <button onclick="runMagic()">Test Live Code</button>
-        function toggleDarkMode() {
-            var body = document.body;
-            var card = document.querySelector('.main-content');
-            
-            // Toggle body styles
-            if (body.style.backgroundColor === 'rgb(26, 32, 44)') {
-                body.style.backgroundColor = '#f0f4f8';
-                body.style.color = '#1a202c';
-                card.style.backgroundColor = 'white';
-                card.style.color = '#1a202c';
-            } else {
-                body.style.backgroundColor = '#1a2024';
-                body.style.color = '#f7fafc';
-                card.style.backgroundColor = '#2d3748';
-                card.style.color = '#f7fafc';
-            }
-        }
     </div>
 
     <script>
         function runMagic() {
             alert("Awesome! Your custom local website script ran successfully!");
         }
-    </script>
-        <script>
-        function runMagic() {
-            alert("Awesome! Your custom local website script ran successfully!");
-        }
 
         function toggleDarkMode() {
             var body = document.body;
             var card = document.querySelector('.main-content');
             
-            // Checks if the site is already dark, then flips the colors
             if (body.style.backgroundColor === 'rgb(26, 36, 40)' || body.style.backgroundColor === '#1a2428') {
                 body.style.backgroundColor = '#f0f4f8';
                 body.style.color = '#1a202c';
@@ -120,7 +104,6 @@
             }
         }
     </script>
-
 
 </body>
 </html>
