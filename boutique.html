@@ -202,6 +202,8 @@ function buildGarment(source, index) {
   const size = new THREE.Vector3(); box.getSize(size);
   const s = GARMENT_HEIGHT / (size.y || 1);
   model.scale.setScalar(s);
+  // Shift the mesh downward so the top collar line rests perfectly on the rail hanger
+model.position.y = -GARMENT_HEIGHT;
 
   const material = new THREE.MeshStandardMaterial({
     color: data.color, roughness: 0.85, metalness: 0, side: THREE.DoubleSide
