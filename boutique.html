@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mazin Atelier - Real 3D Collection Showcase</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0d0e12;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #ffffff;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin: 0 0 10px 0;
+            color: #f7fafc;
+        }
+        p {
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin: 0;
+        }
+        #price-tag-hud {
+            position: absolute;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1a202c;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -120%);
+            border-top: 4px solid #6b46c1;
+        }
+        #price-tag-hud::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.95) transparent;
+        }
+    </style>
+    <!-- Three.js Core and GLTFLoader Plugins -->
+    <script src="https://cloudflare.com"></script>
+    <script src="https://jsdelivr.net"></script>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <h1>Mazin Atelier</h1>
+        <p>Hover cursor over your Blender 3D garments to pivot & inspect</p>
+    </div>
+
+    <div id="price-tag-hud">BLENDER MODEL — $320</div>
+    <div id="canvas-container"></div>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+        const hud = document.getElementById('price-tag-hud');
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0b0d);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 7);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // Studio Lights Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+
+        const purpleRimLight = new THREE.PointLight(0x805ad5, 2, 15);
+        purpleRimLight.position.set(-4, 2, -2);
+        scene.add(purpleRimLight);
+
+        // Building the Hanging Rail
+        const railMaterial = new THREE.MeshStandardMaterial({ color: 0x4a5568, metalness: 0.8, roughness: 0.2 });
+        const railGeometry = new THREE.CylinderGeometry(0.03, 0.03, 6, 32);
+        const mainRail = new THREE.Mesh(railGeometry, railMaterial);
+        mainRail.rotation.z = Math.PI / 2;
+        mainRail.position.y = 1.8;
+        scene.add(mainRail);
+
+        // 3D MODEL LOADER PIPELINE
+        const loader = new THREE.GLTFLoader();
+        const clothes = [];
+        const garmentPositions = [-1.5, 0, 1.5]; // 3 separate coordinate spots on the rail
+
+        const itemsMetadata = [
+            { name: "Mazin Essential Tee", price: "$180" },
+            { name: "Blender Tailored Layer", price: "$340" },
+            { name: "Atelier Signature Draped Coat", price: "$495" }
+        ];
+
+        // Load your actual tshirt.glb file three separate times onto the rack!
+        garmentPositions.forEach((posX, index) => {
+            loader.load('models/tshirt.glb', function(gltf) {
+                const garmentRoot = gltf.scene;
+                
+                // Adjust position onto the hanging rail line
+                garmentRoot.position.set(posX, 1.8, 0);
+                
+                // Set default boutique angle (facing side-on down the line)
+                garmentRoot.rotation.y = Math.PI / 2;
+                
+                // Enlarge model size scale if it looks too small on the web view grid
+                garmentRoot.scale.set(0.6, 0.6, 0.6);
+
+                // Inject tracking variables directly into the 3D asset node
+                garmentRoot.userData = {
+                    name: itemsMetadata[index].name,
+                    price: itemsMetadata[index].price,
+                    targetRotation: Math.PI / 2,
+                    currentRotation: Math.PI / 2
+                };
+
+                scene.add(garmentRoot);
+                clothes.push(garmentRoot);
+            }, undefined, function(error) {
+                console.error("Error loading model data pipeline:", error);
+            });
+        });
+
+        // Interactive Raycasting Mouse Engine
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredObject = null;
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Check cross-intersections against loaded clothing groups
+            const intersects = raycaster.intersectObjects(clothes, true);
+
+            if (intersects.length > 0) {
+                // Traverses upwards past individual meshes to grab the root Blender group hierarchy node
+                let current = intersects[0].object;
+                while (current.parent && !clothes.includes(current)) {
+                    current = current.parent;
+                }
+
+                if (clothes.includes(current)) {
+                    if (hoveredObject !== current) {
+                        hoveredObject = current;
+                        clothes.forEach(c => c.userData.targetRotation = Math.PI / 2);
+                        // Pivot towards user front facing angle!
+                        current.userData.targetRotation = 0; 
+                    }
+                    
+                    hud.style.display = 'block';
+                    hud.style.left = event.clientX + 'px';
+                    hud.style.top = event.clientY + 'px';
+                    hud.innerText = `${current.userData.name} — ${current.userData.price}`;
+                    return;
+                }
+            }
+            
+            if (hoveredObject) {
+                hoveredObject.userData.targetRotation = Math.PI / 2;
+                hoveredObject = null;
+                hud.style.display = 'none';
+            }
+        });
+
+        // Frame rendering cycle loop
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            clothes.forEach((garment) => {
+                // Micro airflow swing physics emulation
+                const speed = hoveredObject === garment ? 5 : 2;
+                const force = hoveredObject === garment ? 0.01 : 0.03;
+                garment.rotation.z = Math.sin(time * speed + garment.position.x) * force;
+
+                // Smooth luxury easing rotation math
+                garment.userData.currentRotation += (garment.userData.targetRotation - garment.userData.currentRotation) * 0.1;
+                garment.rotation.y = garment.userData.currentRotation;
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
