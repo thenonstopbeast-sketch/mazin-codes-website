@@ -134,8 +134,8 @@ function resize() {
   camera.aspect = w / h;
   // keep the whole rail visible on narrow screens
   const railWidth = (GARMENTS.length - 1) * SPACING + 3;
-  camera.position.set(0, 0.7, Math.max(7.5, (railWidth * 1.35) / (camera.aspect * 1.45)));
-  camera.lookAt(LOOK_AT);
+camera.position.set(0, 1.2, 9.5);
+camera.lookAt(new THREE.Vector3(0, 0.8, 0));
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
