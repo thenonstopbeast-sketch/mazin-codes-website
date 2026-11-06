@@ -72,7 +72,7 @@
             border-color: rgba(255, 255, 255, 0.95) transparent;
         }
     </style>
-<!-- Real 3D Engine Subdomain Network Links -->
+    <!-- These are the correct, explicit CDN sub-path script assets -->
     <script src="https://cloudflare.com"></script>
     <script src="https://cloudflare.com"></script>
 </head>
@@ -102,7 +102,7 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // Studio Lights Setup
+        // Lights Setup
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
@@ -114,7 +114,7 @@
         purpleRimLight.position.set(-4, 2, -2);
         scene.add(purpleRimLight);
 
-        // Building the Hanging Rail
+        // Wardrobe Rail Support
         const railMaterial = new THREE.MeshStandardMaterial({ color: 0x4a5568, metalness: 0.8, roughness: 0.2 });
         const railGeometry = new THREE.CylinderGeometry(0.03, 0.03, 6, 32);
         const mainRail = new THREE.Mesh(railGeometry, railMaterial);
@@ -122,10 +122,10 @@
         mainRail.position.y = 1.8;
         scene.add(mainRail);
 
-        // 3D MODEL LOADER PIPELINE
+        // Blender GLTF Model Deployment Engine
         const loader = new THREE.GLTFLoader();
         const clothes = [];
-        const garmentPositions = [-1.5, 0, 1.5]; // 3 separate coordinate spots on the rail
+        const garmentPositions = [-1.5, 0, 1.5];
 
         const itemsMetadata = [
             { name: "Mazin Essential Tee", price: "$180" },
@@ -133,21 +133,13 @@
             { name: "Atelier Signature Draped Coat", price: "$495" }
         ];
 
-        // Load your actual tshirt.glb file three separate times onto the rack!
         garmentPositions.forEach((posX, index) => {
             loader.load('models/tshirt.glb', function(gltf) {
                 const garmentRoot = gltf.scene;
-                
-                // Adjust position onto the hanging rail line
                 garmentRoot.position.set(posX, 1.8, 0);
-                
-                // Set default boutique angle (facing side-on down the line)
                 garmentRoot.rotation.y = Math.PI / 2;
-                
-                // Enlarge model size scale if it looks too small on the web view grid
                 garmentRoot.scale.set(0.6, 0.6, 0.6);
 
-                // Inject tracking variables directly into the 3D asset node
                 garmentRoot.userData = {
                     name: itemsMetadata[index].name,
                     price: itemsMetadata[index].price,
@@ -162,7 +154,7 @@
             });
         });
 
-        // Interactive Raycasting Mouse Engine
+        // Interactive Cursor Mapping Logic
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let hoveredObject = null;
@@ -172,13 +164,10 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            
-            // Check cross-intersections against loaded clothing groups
             const intersects = raycaster.intersectObjects(clothes, true);
 
             if (intersects.length > 0) {
-                // Traverses upwards past individual meshes to grab the root Blender group hierarchy node
-                let current = intersects[0].object;
+                let current = intersects.object;
                 while (current.parent && !clothes.includes(current)) {
                     current = current.parent;
                 }
@@ -187,7 +176,6 @@
                     if (hoveredObject !== current) {
                         hoveredObject = current;
                         clothes.forEach(c => c.userData.targetRotation = Math.PI / 2);
-                        // Pivot towards user front facing angle!
                         current.userData.targetRotation = 0; 
                     }
                     
@@ -206,19 +194,16 @@
             }
         });
 
-        // Frame rendering cycle loop
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
 
             clothes.forEach((garment) => {
-                // Micro airflow swing physics emulation
                 const speed = hoveredObject === garment ? 5 : 2;
                 const force = hoveredObject === garment ? 0.01 : 0.03;
                 garment.rotation.z = Math.sin(time * speed + garment.position.x) * force;
 
-                // Smooth luxury easing rotation math
                 garment.userData.currentRotation += (garment.userData.targetRotation - garment.userData.currentRotation) * 0.1;
                 garment.rotation.y = garment.userData.currentRotation;
             });
