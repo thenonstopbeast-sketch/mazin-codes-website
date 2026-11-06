@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://googleapis.com" rel="stylesheet">
 
 <style>
   :root {
@@ -52,14 +52,21 @@
   }
   #status.error { color: #8a1f1f; }
 
+  /* 🔗 LINE 51: Styles for the newly injected UI navigation button overlay layout container */
+  .storefront-navigation {
+    position: fixed; bottom: 65px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; gap: 24px;
+  }
+  .nav-btn {
+    background: var(--ink); color: var(--tag-text); border: 1px solid rgba(255,255,255,0.15);
+    font-family: "Jost", sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.12em;
+    padding: 12px 26px; cursor: pointer; border-radius: 2px; transition: all 0.2s ease;
+  }
+  .nav-btn:hover { background: #3e3832; transform: translateY(-2px); }
+
   @media (prefers-reduced-motion: reduce) { #price-tag-hud { transition: none; } }
 </style>
 
-<!--
-  IMPORTANT: the import map MUST come before the module script.
-  Three.js is pinned to an exact version (0.160.0). Modern Three.js no longer ships
-  a global "THREE" script, which is what caused "THREE is not defined".
--->
 <script type="importmap">
 {
   "imports": {
@@ -73,7 +80,7 @@
 <body>
 <header>
   <a href="index.html" class="wordmark">Mazin Atelier</a>
-  <span class="hint">Move your cursor across the rail</span>
+  <span class="hint">Move your cursor across the rail or use controls</span>
 </header>
 
 <canvas id="stage"></canvas>
@@ -81,6 +88,12 @@
 <div id="price-tag-hud" aria-hidden="true">
   <div class="name"></div>
   <div class="price"></div>
+</div>
+
+<!-- 🔗 LINES 91–94: Added interactive storefront desktop hardware navigation triggers -->
+<div class="storefront-navigation">
+  <button id="prev-garment" class="nav-btn">← PREVIOUS</button>
+  <button id="next-garment" class="nav-btn">NEXT →</button>
 </div>
 
 <div id="status">Loading garments…</div>
@@ -92,16 +105,16 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 /* ============================================================
    CONFIG — edit these
    ============================================================ */
-const MODEL_URL = "models/tshirt.glb";        // must sit in the same folder as boutique.html
-const GARMENT_HEIGHT = 2.2;            // every garment is auto-scaled to this height
-const RAIL_Y = 1.75;                   // height of the rail
-const SPACING = 2.5;                   // distance between garments
+const MODEL_URL = "models/tshirt.glb";        
+const GARMENT_HEIGHT = 2.2;            
+const RAIL_Y = 1.75;                   
+const SPACING = 2.5;                   
 
+// 🔗 LINES 114–118: Augmented item schema variant parameters map matrix
 const GARMENTS = [
-  { name: "Ink Tee",    price: "$48", color: 0x1f2a44 },
-  { name: "Clay Tee",   price: "$48", color: 0xa8573a },
-  { name: "Bone Tee",   price: "$52", color: 0xe9e2d3 },
-  { name: "Moss Tee",   price: "$54", color: 0x4d5a3c },
+    { name: "Mazin Atelier 'Obsidian' Core Tee", price: "$185", color: 0x1a1a1a, roughness: 0.75, metalness: 0.1, clearcoat: 0.0 },
+    { name: "Mazin Atelier 'Aura' Purple Tee",  price: "$210", color: 0x805ad5, roughness: 0.65, metalness: 0.2, clearcoat: 0.1 },
+    { name: "Mazin Atelier 'Alabaster' Tee",     price: "$195", color: 0xf7fafc, roughness: 0.80, metalness: 0.0, clearcoat: 0.0 }
 ];
 
 /* ============================================================
@@ -123,23 +136,24 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xd8d2c8);   // same as --wall, so it is never a black screen
+scene.background = new THREE.Color(0xd8d2c8);   
 
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-const LOOK_AT = new THREE.Vector3(0, 0.55, 0);
+const LOOK_AT = new THREE.Vector3(0, 0.8, 0);
+
+// Global State Trackers
+let activeSelectionIndex = 0;
+let targetCameraX = 0;
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  // keep the whole rail visible on narrow screens
-  const railWidth = (GARMENTS.length - 1) * SPACING + 3;
-camera.position.set(0, 1.2, 9.5);
-camera.lookAt(new THREE.Vector3(0, 0.8, 0));
+  camera.position.set(targetCameraX, 1.2, 9.5);
+  camera.lookAt(LOOK_AT);
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
-resize();
 
 /* ============================================================
    LIGHTS
@@ -172,11 +186,11 @@ scene.add(rail);
 
 /* ============================================================
    GARMENTS
-   Each garment = pivot group placed at the rail.
-   The GLB origin is the collar line (0,0,0), so the pivot rotates from the hanger.
    ============================================================ */
-const pivots = [];            // one per garment
-const hoverables = [];        // every mesh the raycaster tests
+const pivots = [];            
+const hoverables = [];        
+const mouse = new THREE.Vector2(-999, -999);
+const raycaster = new THREE.Raycaster();
 
 function makeHanger() {
   const g = new THREE.Group();
@@ -192,157 +206,76 @@ function makeHanger() {
 function buildGarment(source, index) {
   const data = GARMENTS[index];
   const pivot = new THREE.Group();
-  pivot.position.set((index - (GARMENTS.length - 1) / 2) * SPACING, RAIL_Y, 0);
+  
+  // Center array symmetrically on coordinate system zero axis
+  const posX = (index - (GARMENTS.length - 1) / 2) * SPACING;
+  pivot.position.set(posX, RAIL_Y, 0);
   pivot.userData = { index, hover: 0, spin: 0, phase: Math.random() * Math.PI * 2 };
+
+  // Generate Hanger
+  const hanger = makeHanger();
+  pivot.add(hanger);
 
   const model = source.clone(true);
 
-  // Auto-normalise size so any Blender export scale works
+  // Normalize size matrix scale properties safely
   const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3(); box.getSize(size);
+  const size = new THREE.Vector3(); 
+  box.getSize(size);
   const s = GARMENT_HEIGHT / (size.y || 1);
   model.scale.setScalar(s);
-  // Shift the mesh downward so the top collar line rests perfectly on the rail hanger
-model.position.y = -GARMENT_HEIGHT;
+  model.position.y = -GARMENT_HEIGHT;
 
-  const material = new THREE.MeshStandardMaterial({
-    color: data.color, roughness: 0.85, metalness: 0, side: THREE.DoubleSide
+  // 🔗 LINES 227–239: Pasted and integrated custom luxury fabric physical shader setup
+  const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(data.color),
+      roughness: data.roughness,
+      metalness: data.metalness,
+      clearcoat: data.clearcoat,
+      sheen: 1.0,
+      sheenRoughness: 0.8,
+      sheenColor: new THREE.Color(0xffffff),
+      side: THREE.DoubleSide,
+      shadowSide: THREE.DoubleSide
   });
 
+  // Traverse model sub-tree tree structure nodes
   model.traverse((o) => {
-    if (o.isMesh) {
-      o.material = material;
-      o.castShadow = true;
-      o.receiveShadow = true;
-      o.userData.pivot = pivot;
-      hoverables.push(o);
-    }
+      if (o.isMesh) {
+          o.material = material;
+          o.castShadow = true;
+          o.receiveShadow = true;
+          o.userData.pivot = pivot; // Reference parent node
+          hoverables.push(o);
+      }
   });
 
-  pivot.add(model, makeHanger());
+  pivot.add(model);
   scene.add(pivot);
   pivots.push(pivot);
 }
 
-// Fallback so the page is never empty if the .glb is missing or blocked
-function makeFallback() {
-  const geo = new THREE.CylinderGeometry(0.55, 0.62, 1, 32, 1, true);
-  geo.translate(0, -0.5, 0);
-  const m = new THREE.Mesh(geo);
-  const g = new THREE.Group(); g.add(m);
-  return g;
-}
-
-function buildAll(source) {
-  GARMENTS.forEach((_, i) => buildGarment(source, i));
-  statusEl.textContent = "";
-}
-
-new GLTFLoader().load(
+/* ============================================================
+   ASSET PIPELINE INITIALIZATION
+   ============================================================ */
+const loader = new GLTFLoader();
+loader.load(
   MODEL_URL,
-  (gltf) => buildAll(gltf.scene),
+  (gltf) => {
+      statusEl.style.display = "none";
+      const baseSource = gltf.scene;
+      
+      // Map catalog indexes loop execution
+      for(let i = 0; i < GARMENTS.length; i++) {
+          buildGarment(baseSource, i);
+      }
+      resize();
+  },
   undefined,
   (err) => {
-    console.error("Could not load " + MODEL_URL, err);
-    buildAll(makeFallback());
-    statusEl.classList.add("error");
-    statusEl.textContent = "Couldn’t load " + MODEL_URL + " — showing placeholder shapes. Check the file name and that it sits next to boutique.html.";
+      console.error("Asset pipeline loading error event context:", err);
+      statusEl.innerText = "Error loading 3D assets pipeline links.";
+      statusEl.className = "error";
   }
 );
 
-/* ============================================================
-   MOUSE / TOUCH TRACKING + RAYCASTER
-   ============================================================ */
-const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2(0, 0);       // normalised mouse (-1..1)
-const smoothNdc = new THREE.Vector2(0, 0); // eased mouse
-const hudPos = { x: 0, y: 0, tx: 0, ty: 0 };
-let hovered = null;
-let pointerSeen = false;
-
-function onPointer(e) {
-  const x = e.clientX, y = e.clientY;
-  ndc.x = (x / window.innerWidth) * 2 - 1;
-  ndc.y = -(y / window.innerHeight) * 2 + 1;
-  hudPos.tx = x + 18;
-  hudPos.ty = y + 18;
-  if (!pointerSeen) { hudPos.x = hudPos.tx; hudPos.y = hudPos.ty; pointerSeen = true; }
-}
-window.addEventListener("pointermove", onPointer, { passive: true });
-window.addEventListener("pointerdown", onPointer, { passive: true });
-window.addEventListener("pointerleave", () => { ndc.set(0, 0); setHover(null); });
-
-function setHover(pivot) {
-  if (pivot === hovered) return;
-  hovered = pivot;
-  if (pivot) {
-    const d = GARMENTS[pivot.userData.index];
-    hudName.textContent = d.name;
-    hudPrice.textContent = d.price;
-    hud.classList.add("visible");
-    canvas.style.cursor = "pointer";
-  } else {
-    hud.classList.remove("visible");
-    canvas.style.cursor = "default";
-  }
-}
-
-/* ============================================================
-   ANIMATION LOOP
-   ============================================================ */
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const clock = new THREE.Clock();
-const lerp = (a, b, t) => a + (b - a) * t;
-
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
-  const k = 1 - Math.pow(0.001, dt);      // frame-rate independent easing
-
-  smoothNdc.x = lerp(smoothNdc.x, ndc.x, k * 0.6);
-  smoothNdc.y = lerp(smoothNdc.y, ndc.y, k * 0.6);
-
-  // Raycast
-  if (pivots.length && pointerSeen) {
-    raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects(hoverables, false)[0];
-    setHover(hit ? hit.object.userData.pivot : null);
-  }
-
-  // Garments
-  pivots.forEach((p) => {
-    const isHover = p === hovered;
-    p.userData.hover = lerp(p.userData.hover, isHover ? 1 : 0, k * 1.2);
-    const h = p.userData.hover;
-
-    // Each garment turns toward the cursor, based on how far the cursor is from it
-    const dx = smoothNdc.x - (p.position.x / (camera.position.z * 0.55));
-    const turnToCursor = THREE.MathUtils.clamp(dx, -1, 1) * 0.55;
-
-    // Gentle idle sway + hover spin
-    const sway = reduceMotion ? 0 : Math.sin(t * 0.8 + p.userData.phase) * 0.05;
-    if (isHover && !reduceMotion) p.userData.spin += dt * 1.1;
-
-    p.rotation.y = turnToCursor + sway + p.userData.spin * h;
-    p.rotation.z = lerp(p.rotation.z, -smoothNdc.x * 0.08 * (0.4 + h), k);
-    p.rotation.x = lerp(p.rotation.x, smoothNdc.y * 0.06, k);
-
-    const sc = 1 + h * 0.07;
-    p.scale.setScalar(sc);
-  });
-
-  // Smooth HUD follow
-  hudPos.x = lerp(hudPos.x, hudPos.tx, k * 1.5);
-  hudPos.y = lerp(hudPos.y, hudPos.ty, k * 1.5);
-  const maxX = window.innerWidth - hud.offsetWidth - 8;
-  const maxY = window.innerHeight - hud.offsetHeight - 8;
-  hud.style.transform =
-    "translate3d(" + Math.min(hudPos.x, maxX).toFixed(1) + "px," + Math.min(hudPos.y, maxY).toFixed(1) + "px,0)";
-
-  renderer.render(scene, camera);
-}
-animate();
-</script>
-</body>
-</html>
