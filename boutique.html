@@ -101,6 +101,118 @@
 <script type="module">
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+const GRAVITY = new THREE.Vector3(0, -9.8, 0);
+const TIMESTEP = 0.016; 
+let fabricParticles = [];
+let fabricConstraints = [];
+let activeGarmentMesh = null;
+
+export function loadLuxuryGarments(scene, colorToken) {
+    const loader = new GLTFLoader();
+    loader.load('./models/tshirt.glb', (gltf) => {
+        gltf.scene.traverse((child) => {
+            if (child.isMesh) {
+                activeGarmentMesh = child;
+                child.material = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(colorToken),
+                    roughness: 0.8,
+                    metalness: 0.1,
+                    side: THREE.DoubleSide,
+                    shadowSide: THREE.DoubleSide,
+                    sheen: 1.0,
+                    sheenRoughness: 0.65,
+                    sheenColor: new THREE.Color(0xffffff)
+                });
+                child.castShadow = true;
+                child.receiveShadow = true;
+                buildClothSystem(child);
+            }
+        });
+        scene.add(gltf.scene);
+    }, undefined, (error) => console.error('Asset Pipeline Error:', error));
+}
+
+function buildClothSystem(mesh) {
+    const geometry = mesh.geometry;
+    const positionAttribute = geometry.attributes.position;
+    const pinnedAttribute = geometry.attributes._PinnedShoulders; 
+    
+    fabricParticles = [];
+    fabricConstraints = [];
+    
+    for (let i = 0; i < positionAttribute.count; i++) {
+        let localPos = new THREE.Vector3().fromBufferAttribute(positionAttribute, i);
+        let worldPos = localPos.clone().applyMatrix4(mesh.matrixWorld);
+        
+        let isPinned = false;
+        if (pinnedAttribute && pinnedAttribute.getX(i) > 0) {
+            isPinned = true;
+        }
+
+        fabricParticles.push({
+            position: worldPos.clone(),
+            previous: worldPos.clone(),
+            acceleration: new THREE.Vector3(0, 0, 0),
+            isPinned: isPinned
+        });
+    }
+
+    const index = geometry.index;
+    if (index) {
+        for (let i = 0; i < index.count; i += 3) {
+            const idxA = index.getX(i);
+            const idxB = index.getY(i);
+            const idxC = index.getZ(i);
+            createLink(idxA, idxB);
+            createLink(idxB, idxC);
+            createLink(idxC, idxA);
+        }
+    }
+}
+
+function createLink(a, b) {
+    const dist = fabricParticles[a].position.distanceTo(fabricParticles[b].position);
+    fabricConstraints.push({ indexA: a, indexB: b, restLength: dist });
+}
+
+export function runBoutiqueFrameUpdate() {
+    if (!activeGarmentMesh || fabricParticles.length === 0) return;
+
+    for (let p of fabricParticles) {
+        if (p.isPinned) continue;
+        p.acceleration.add(GRAVITY);
+        let currentPos = p.position.clone();
+        let frameVelocity = p.position.clone().sub(p.previous).multiplyScalar(0.96);
+        p.position.add(frameVelocity).add(p.acceleration.multiplyScalar(TIMESTEP * TIMESTEP));
+        p.previous = currentPos;
+        p.acceleration.set(0, 0, 0);
+    }
+
+    for (let step = 0; step < 4; step++) {
+        for (let c of fabricConstraints) {
+            let nodeA = fabricParticles[c.indexA];
+            let nodeB = fabricParticles[c.indexB];
+            let deltaVector = nodeB.position.clone().sub(nodeA.position);
+            let currentDist = deltaVector.length();
+            if (currentDist === 0) continue;
+            let structuralError = currentDist - c.restLength;
+            let splitCorrection = deltaVector.normalize().multiplyScalar(structuralError * 0.5);
+            if (!nodeA.isPinned) nodeA.position.add(splitCorrection);
+            if (!nodeB.isPinned) nodeB.position.sub(splitCorrection);
+        }
+    }
+
+    const positionAttribute = activeGarmentMesh.geometry.attributes.position;
+    const inverseWorldMatrix = new THREE.Matrix4().copy(activeGarmentMesh.matrixWorld).invert();
+    
+    for (let i = 0; i < fabricParticles.length; i++) {
+        let transformedLocal = fabricParticles[i].position.clone().applyMatrix4(inverseWorldMatrix);
+        positionAttribute.setXYZ(i, transformedLocal.x, transformedLocal.y, transformedLocal.z);
+    }
+    
+    positionAttribute.needsUpdate = true;
+    activeGarmentMesh.geometry.computeVertexNormals();
+}
 
 /* ============================================================
    CONFIG
@@ -261,9 +373,14 @@ function buildAll(source) {
 function loadModel(urls) {
   const url = urls[0];
   new GLTFLoader().load(
-    url,
-    (gltf) => { statusEl.style.display = "none"; buildAll(gltf.scene); },
-    undefined,
+        url,
+        (gltf) => {
+            statusEl.style.display = "none";
+            GARMENTS.forEach((garment, i) => {
+                loadLuxuryGarments(scene, garment.color); 
+            });
+        },
+        undefined,
     (err) => {
       console.warn("Could not load " + url, err);
       if (urls.length > 1) { loadModel(urls.slice(1)); return; }
@@ -335,13 +452,16 @@ const clock = new THREE.Clock();
 const lerp = (a, b, t) => a + (b - a) * t;
 
 function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
-  const k = 1 - Math.pow(0.001, dt);
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.getElapsedTime();
+    const k = 1 - Math.pow(0.001, dt);
 
-  smoothNdc.x = lerp(smoothNdc.x, ndc.x, k * 0.6);
-  smoothNdc.y = lerp(smoothNdc.y, ndc.y, k * 0.6);
+    runBoutiqueFrameUpdate(); // <--- This line is now successfully active!
+
+    smoothMdc.x = lerp(smoothMdc.x, mdc.x, k * 0.6);
+    smoothMdc.y = lerp(smoothMdc.y, mdc.y, k * 0.6);
+
 
   // Camera glides to the selected garment
   camX = lerp(camX, targetCamX, k * 0.8);
