@@ -5,478 +5,452 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mazin Atelier — Boutique</title>
 <link rel="icon" href="data:,">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-  :root {
-    --wall: #d8d2c8;
-    --ink: #23201c;
-    --muted: #6d655b;
-    --tag: #23201c;
-    --tag-text: #f3efe8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; background: var(--wall); }
-  body { font-family: "Jost", system-ui, sans-serif; color: var(--ink); }
-
-  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
-
-  header {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 22px 28px; pointer-events: none;
-  }
-  header a { pointer-events: auto; color: inherit; text-decoration: none; }
-  .wordmark { font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 600; letter-spacing: .02em; }
-  .hint { font-size: .9rem; color: var(--muted); }
-
-  #price-tag-hud {
-    position: fixed; top: 0; left: 0; z-index: 10;
-    pointer-events: none; opacity: 0;
-    transition: opacity .18s ease;
-    background: var(--tag); color: var(--tag-text);
-    padding: 10px 14px; border-radius: 3px;
-    min-width: 120px; white-space: nowrap;
-    will-change: transform;
-  }
-  #price-tag-hud.visible { opacity: 1; }
-  #price-tag-hud .name { font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.15rem; font-weight: 600; line-height: 1.1; }
-  #price-tag-hud .price { font-size: .95rem; margin-top: 3px; }
-
-  #status {
-    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
-    z-index: 6; font-size: .9rem; color: var(--muted);
-    text-align: center; max-width: 90vw;
-  }
-  #status.error { color: #8a1f1f; }
-
-  .storefront-navigation {
-    position: fixed; bottom: 65px; left: 50%; transform: translateX(-50%);
-    z-index: 20; display: flex; gap: 24px;
-  }
-  .nav-btn {
-    background: var(--ink); color: var(--tag-text); border: 1px solid rgba(255,255,255,0.15);
-    font-family: "Jost", sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.12em;
-    padding: 12px 26px; cursor: pointer; border-radius: 2px; transition: all 0.2s ease;
-  }
-  .nav-btn:hover { background: #3e3832; transform: translateY(-2px); }
-  .nav-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-  @media (prefers-reduced-motion: reduce) { #price-tag-hud, .nav-btn { transition: none; } }
+  :root { --wall:#d8d2c8; --ink:#23201c; --muted:#6d655b; --tag-text:#f3efe8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; overflow:hidden; background:var(--wall); }
+  body { font-family:"Jost", system-ui, sans-serif; color:var(--ink); }
+  #stage { position:fixed; inset:0; display:block; width:100%; height:100%; touch-action:none; }
+  header { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:baseline; padding:22px 28px; pointer-events:none; }
+  header a { pointer-events:auto; color:inherit; text-decoration:none; }
+  .wordmark { font-family:"Cormorant Garamond", Georgia, serif; font-size:1.7rem; font-weight:600; letter-spacing:.02em; }
+  .hint { font-size:.9rem; color:var(--muted); }
+  #price-tag-hud { position:fixed; top:0; left:0; z-index:10; pointer-events:none; opacity:0; transition:opacity .18s ease; background:var(--ink); color:var(--tag-text); padding:10px 14px; border-radius:3px; min-width:120px; white-space:nowrap; will-change:transform; }
+  #price-tag-hud.visible { opacity:1; }
+  #price-tag-hud .name { font-family:"Cormorant Garamond", Georgia, serif; font-size:1.15rem; font-weight:600; line-height:1.1; }
+  #price-tag-hud .price { font-size:.95rem; margin-top:3px; }
+  .storefront-navigation { position:fixed; bottom:48px; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:24px; }
+  .nav-btn { background:var(--ink); color:var(--tag-text); border:1px solid rgba(255,255,255,.15); font-family:"Jost", sans-serif; font-size:.85rem; font-weight:500; letter-spacing:.12em; padding:12px 26px; cursor:pointer; border-radius:2px; transition:all .2s ease; }
+  .nav-btn:hover { background:#3e3832; transform:translateY(-2px); }
+  .nav-btn:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+  @media (prefers-reduced-motion: reduce) { #price-tag-hud, .nav-btn { transition:none; } }
 </style>
-
 <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+} }
 </script>
 </head>
-
 <body>
 <header>
   <a href="index.html" class="wordmark">Mazin Atelier</a>
   <span class="hint">Move your cursor across the rail or use controls</span>
 </header>
-
 <canvas id="stage"></canvas>
-
-<div id="price-tag-hud" aria-hidden="true">
-  <div class="name"></div>
-  <div class="price"></div>
-</div>
-
+<div id="price-tag-hud" aria-hidden="true"><div class="name"></div><div class="price"></div></div>
 <div class="storefront-navigation">
   <button id="prev-garment" class="nav-btn" type="button">← PREVIOUS</button>
   <button id="next-garment" class="nav-btn" type="button">NEXT →</button>
 </div>
 
-<div id="status">Loading garments…</div>
-
 <script type="module">
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 /* ============================================================
    CONFIG
    ============================================================ */
-// BUMP THIS NUMBER every time you re-export / replace tshirt.glb.
-// It forces browsers and GitHub Pages to download the new file instead of a cached one.
-const MODEL_VERSION = 3;
-const MODEL_URLS = [
-  "models/tshirt.glb?v=" + MODEL_VERSION,
-  "tshirt.glb?v=" + MODEL_VERSION
-];
-
-const GARMENT_HEIGHT = 2.2;
-const RAIL_Y = 1.75;
-const SPACING = 2.5;
-
-// Fabric feel. Raise AMOUNT for more movement, raise STIFFNESS for a stiffer cloth,
-// raise DAMPING so the swing settles faster.
-const FABRIC = { AMOUNT: 1.0, STIFFNESS: 18, DAMPING: 3.2 };
+const RAIL_Y = 1.75, SPACING = 2.5;
+const CELL   = 0.045;   // cloth resolution. Smaller = more faces, more realistic, heavier (try 0.035)
+const ITER   = 8;       // constraint passes per step. Higher = stiffer, less rubbery cloth
+const GRAVITY = 8, DAMP = 0.985;
 
 const GARMENTS = [
-  { name: "Mazin Atelier 'Obsidian' Core Tee", price: "$185", color: 0x1a1a1a, roughness: 0.75, metalness: 0.1, clearcoat: 0.0 },
-  { name: "Mazin Atelier 'Aura' Purple Tee",   price: "$210", color: 0x805ad5, roughness: 0.65, metalness: 0.2, clearcoat: 0.1 },
-  { name: "Mazin Atelier 'Alabaster' Tee",     price: "$195", color: 0xf7fafc, roughness: 0.80, metalness: 0.0, clearcoat: 0.0 }
+  { name: "Mazin Atelier 'Obsidian' Core Tee", price: "$185", color: 0x1a1a1a, roughness: 0.75 },
+  { name: "Mazin Atelier 'Aura' Purple Tee",   price: "$210", color: 0x805ad5, roughness: 0.65 },
+  { name: "Mazin Atelier 'Alabaster' Tee",     price: "$195", color: 0xf7fafc, roughness: 0.80 }
 ];
 
 /* ============================================================
-   DOM
+   SETUP
    ============================================================ */
-const canvas = document.getElementById("stage");
-const hud = document.getElementById("price-tag-hud");
-const hudName = hud.querySelector(".name");
-const hudPrice = hud.querySelector(".price");
-const statusEl = document.getElementById("status");
-const prevBtn = document.getElementById("prev-garment");
-const nextBtn = document.getElementById("next-garment");
+const $ = (s) => document.querySelector(s);
+const canvas = $("#stage"), hud = $("#price-tag-hud");
+const hudName = hud.querySelector(".name"), hudPrice = hud.querySelector(".price");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
-/* ============================================================
-   RENDERER / SCENE / CAMERA
-   ============================================================ */
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd8d2c8);
-
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-const LOOK_AT = new THREE.Vector3(0, 0.8, 0);
-
-let activeIndex = 0;
-let camX = 0;
-let targetCamX = 0;
 
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
 }
-window.addEventListener("resize", resize);
-resize();
+addEventListener("resize", resize); resize();
 
-/* ============================================================
-   LIGHTS
-   ============================================================ */
 scene.add(new THREE.HemisphereLight(0xffffff, 0xb8afa2, 1.0));
-
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
-key.position.set(3, 6, 6);
-key.castShadow = true;
-key.shadow.mapSize.set(1024, 1024);
-key.shadow.camera.left = -8; key.shadow.camera.right = 8;
-key.shadow.camera.top = 6;   key.shadow.camera.bottom = -4;
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+key.position.set(3, 6, 6); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -8, right: 8, top: 7, bottom: -5 });
+key.shadow.bias = -0.0004;
 scene.add(key);
-
 const fill = new THREE.DirectionalLight(0xfff1de, 0.7);
-fill.position.set(-5, 2, 4);
-scene.add(fill);
+fill.position.set(-5, 2, 4); scene.add(fill);
+
+// Soft wall behind the rail so the cloth casts a visible shadow
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), new THREE.ShadowMaterial({ opacity: 0.2 }));
+wall.position.set(0, 0.5, -1.5); wall.receiveShadow = true; scene.add(wall);
+
+const metal = new THREE.MeshStandardMaterial({ color: 0x2b2824, metalness: 0.8, roughness: 0.35 });
+const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, (GARMENTS.length - 1) * SPACING + 4.2, 24), metal);
+rail.rotation.z = Math.PI / 2; rail.position.set(0, RAIL_Y + 0.12, 0); scene.add(rail);
 
 /* ============================================================
-   RAIL
+   TEE PATTERN (all measurements in scene units)
+   d = distance down from the shoulder line, x = left/right
    ============================================================ */
-const railLength = (GARMENTS.length - 1) * SPACING + 4;
-const rail = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.035, 0.035, railLength, 24),
-  new THREE.MeshStandardMaterial({ color: 0x2b2824, metalness: 0.8, roughness: 0.35 })
-);
-rail.rotation.z = Math.PI / 2;
-rail.position.set(0, RAIL_Y + 0.12, 0);
-scene.add(rail);
+const BODY = 0.62, END = 1.0, NECK = 0.2, SLOPE = 0.28, SLEEVE_H = 0.42, HEM = 1.55;
+const SHY = (BODY - NECK) * SLOPE;                       // shoulder tip drop
+const NXH = Math.round(1.02 / CELL), NX = NXH * 2, NY = Math.ceil(1.62 / CELL), N = (NX + 1) * (NY + 1);
+const gx = (i) => (i - NXH) * CELL, gd = (j) => j * CELL, K = (i, j) => i * (NY + 1) + j;
+const topEdge = (ax) => Math.max(0, (ax - NECK) * SLOPE);
 
-/* ============================================================
-   FABRIC MOTION (runs on the GPU, no geometry is rewritten)
-   - The collar line is pinned. Movement grows toward the hem and sleeves.
-   - A small spring simulation (per garment) makes the cloth lag behind
-     rotation and cursor movement, then swing back and settle.
-   ============================================================ */
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-function applyFabricShader(material, u) {
-  material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, u);
-    shader.vertexShader =
-      "uniform float uTime;\nuniform float uPhase;\nuniform float uSwing;\nuniform float uAmp;\n" +
-      "uniform float uTop;\nuniform float uHeight;\nuniform float uCx;\nuniform float uHalfW;\n" +
-      shader.vertexShader.replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-        {
-          float hN    = clamp((uTop - position.y) / uHeight, 0.0, 1.0);   // 0 at collar, 1 at hem
-          float hang  = pow(hN, 1.4);
-          float sideN = clamp(abs(position.x - uCx) / uHalfW, 0.0, 1.0);
-          float sleeve = smoothstep(0.55, 1.0, sideN) * smoothstep(0.0, 0.12, hN)
-                       * (1.0 - smoothstep(0.35, 0.6, hN)) * 0.6;
-          float w = max(hang, sleeve);
-
-          float flutter = sin(uTime * 1.7 + uPhase + hN * 6.0 + position.x / uHeight * 3.0) * 0.018
-                        + sin(uTime * 0.95 + uPhase * 1.7 - position.x / uHeight * 5.0) * 0.010;
-
-          transformed.z += (flutter + uSwing * 0.05) * uHeight * w * uAmp;
-          transformed.x += (uSwing * 0.06 + sin(uTime * 1.1 + uPhase) * 0.008) * uHeight * w * uAmp;
-          transformed.y += abs(uSwing) * 0.02 * uHeight * w * uAmp;
-        }`
-      );
-  };
-  material.customProgramCacheKey = () => "mazin-fabric-v1";
+function inside(x, d, front) {
+  const ax = Math.abs(x);
+  if (ax > END || d < 0 || d > HEM) return false;
+  const top = ax < NECK ? (front ? 0.26 : 0.07) * (1 - (ax / NECK) ** 2) : (ax - NECK) * SLOPE;
+  if (d < top) return false;
+  return ax <= BODY ? true : d <= top + SLEEVE_H;
 }
 
 /* ============================================================
-   GARMENTS
+   BUILD ONE CLOTH: front + back panels, stitched at shoulders, sides and underarms.
+   Neck, hem and cuffs stay open.
    ============================================================ */
-const pivots = [];
-const hoverables = [];
+function buildCloth() {
+  const inP = [new Uint8Array(N), new Uint8Array(N)];
+  for (let p = 0; p < 2; p++) for (let i = 0; i <= NX; i++) for (let j = 0; j <= NY; j++)
+    inP[p][K(i, j)] = inside(gx(i), gd(j), p === 0) ? 1 : 0;
+  const isIn = (p, i, j) => i >= 0 && i <= NX && j >= 0 && j <= NY && inP[p][K(i, j)] === 1;
+  const isSeam = (p, i, j) => {
+    if (isIn(p, i + 1, j) && isIn(p, i - 1, j) && isIn(p, i, j + 1) && isIn(p, i, j - 1)) return false;
+    const ax = Math.abs(gx(i)), d = gd(j);
+    return !(d > HEM - 1.2 * CELL || ax > END - 1.2 * CELL || (ax < NECK + 1.5 * CELL && d < 0.36));
+  };
+
+  const map = [new Int32Array(N).fill(-1), new Int32Array(N).fill(-1)];
+  const px = [], pd = [], pf = [];
+  for (let p = 0; p < 2; p++) for (let i = 0; i <= NX; i++) for (let j = 0; j <= NY; j++) {
+    if (!isIn(p, i, j)) continue;
+    const k = K(i, j);
+    if (p === 1 && map[0][k] >= 0 && isSeam(1, i, j) && isSeam(0, i, j)) { map[1][k] = map[0][k]; pf[map[0][k]] = 0; continue; }
+    map[p][k] = px.length; px.push(gx(i)); pd.push(gd(j)); pf.push(p === 0 ? 1 : -1);
+  }
+  const n = px.length;
+  const m = (p, i, j) => (isIn(p, i, j) ? map[p][K(i, j)] : -1);
+
+  // Constraints
+  const seen = new Set(), ea = [], eb = [], es = [], adj = Array.from({ length: n }, () => []);
+  const addE = (a, b, s, st) => {
+    if (a < 0 || b < 0 || a === b) return;
+    const key = a < b ? a * 100000 + b : b * 100000 + a;
+    if (seen.has(key)) return; seen.add(key);
+    ea.push(a); eb.push(b); es.push(s);
+    if (st) { adj[a].push(b); adj[b].push(a); }
+  };
+  for (let p = 0; p < 2; p++) for (let i = 0; i <= NX; i++) for (let j = 0; j <= NY; j++) {
+    const a = m(p, i, j); if (a < 0) continue;
+    addE(a, m(p, i + 1, j), 1, true);
+    addE(a, m(p, i, j + 1), 1, true);
+    addE(a, m(p, i + 1, j + 1), 0.8, false);
+    addE(m(p, i + 1, j), m(p, i, j + 1), 0.8, false);
+    if (isIn(p, i + 1, j)) addE(a, m(p, i + 2, j), 0.25, false);   // bend: soft, so cloth can fold
+    if (isIn(p, i, j + 1)) addE(a, m(p, i, j + 2), 0.25, false);
+  }
+
+  // Distance from the stitched seams (so panels puff out in the middle)
+  const depth = new Int16Array(n).fill(-1), queue = [];
+  for (let q = 0; q < n; q++) if (pf[q] === 0) { depth[q] = 0; queue.push(q); }
+  for (let h = 0; h < queue.length; h++) for (const b of adj[queue[h]])
+    if (depth[b] < 0) { depth[b] = depth[queue[h]] + 1; queue.push(b); }
+
+  // Initial 3D shape (local space): puffed panels, sleeves already angled down
+  const local = new Float32Array(n * 3), pin = new Uint8Array(n), ph = new Float32Array(n);
+  for (let q = 0; q < n; q++) {
+    const ax = Math.abs(px[q]), k = depth[q] < 0 ? 6 : depth[q];
+    const B = ax <= BODY ? 0.16 : 0.16 - ((ax - BODY) / (END - BODY)) * 0.09;
+    let x = px[q], y = -pd[q], z = pf[q] * B * Math.sin(Math.min(k / 6, 1) * Math.PI / 2);
+    if (ax > BODY) {
+      const rx = ax - BODY, ry = y + SHY, phi = 0.9 * smooth((ax - BODY) / 0.18), c = Math.cos(phi), s = Math.sin(phi);
+      x = Math.sign(x) * (BODY + rx * c + ry * s); y = -SHY + (-rx * s + ry * c);
+    }
+    if (pf[q] === 0 && ax >= 0.22 && ax <= 0.66 && pd[q] <= topEdge(ax) + CELL) {   // hung from the hanger
+      pin[q] = 1; y = -topEdge(ax); z = 0;
+    }
+    local.set([x, y, z], q * 3);
+    ph[q] = px[q] * 7.3 + pd[q] * 5.1;
+  }
+  const er = new Float32Array(ea.length);
+  for (let c = 0; c < ea.length; c++) {
+    const a = ea[c] * 3, b = eb[c] * 3;
+    er[c] = Math.hypot(local[a] - local[b], local[a + 1] - local[b + 1], local[a + 2] - local[b + 2]);
+  }
+
+  // Triangles
+  const tri = [];
+  for (let p = 0; p < 2; p++) for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
+    const q = [m(p, i, j), m(p, i, j + 1), m(p, i + 1, j + 1), m(p, i + 1, j)].filter((v) => v >= 0);
+    if (q.length < 3) continue;
+    const t = q.length === 4 ? [[q[0], q[1], q[2]], [q[0], q[2], q[3]]] : [[q[0], q[1], q[2]]];
+    for (const [a, b, c] of t) tri.push(...(p === 0 ? [a, b, c] : [a, c, b]));
+  }
+  const uv = new Float32Array(n * 2);
+  for (let q = 0; q < n; q++) { uv[q * 2] = px[q] * 8; uv[q * 2 + 1] = pd[q] * 8; }
+
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(n * 3);
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(tri);
+
+  return { n, pos, prev: new Float32Array(n * 3), local, flag: Int8Array.from(pf), pin, ph,
+           ea: Int32Array.from(ea), eb: Int32Array.from(eb), er, es: Float32Array.from(es), ne: ea.length, geo, tris: tri.length / 3 };
+}
+
+/* ============================================================
+   PHYSICS
+   ============================================================ */
+const DT = 1 / 60;
+
+// Invisible body inside the tee: keeps front and back panels apart so it holds its volume
+function zmin(lx, ly) {
+  const ax = Math.abs(lx), d = -ly;
+  if (d < 0.1 || d > 1.62) return 0;
+  if (ax < 0.55) {
+    const q = ax / 0.55, rz = 0.15 - 0.05 * Math.min(Math.max((d - 0.3) / 1.3, 0), 1);
+    return rz * Math.sqrt(1 - q * q) + 0.005;
+  }
+  return ax < 1.0 && d < 1.25 ? 0.03 : 0;      // sleeves keep a little thickness
+}
+
+function stepCloth(c, e, ie, t, wx, wz) {
+  const { pos, prev, n, flag, pin, local, ph, ea, eb, er, es, ne } = c, dt2 = DT * DT;
+  for (let i = 0; i < n; i++) {
+    const k = i * 3;
+    if (pin[i]) {
+      const x = local[k], y = local[k + 1], z = local[k + 2];
+      pos[k]     = prev[k]     = e[0] * x + e[4] * y + e[8]  * z + e[12];
+      pos[k + 1] = prev[k + 1] = e[1] * x + e[5] * y + e[9]  * z + e[13];
+      pos[k + 2] = prev[k + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+      continue;
+    }
+    const w = 0.5 + 0.5 * Math.sin(t * 1.3 + ph[i]);
+    const x = pos[k], y = pos[k + 1], z = pos[k + 2];
+    pos[k]     = x + (x - prev[k]) * DAMP + wx * w * dt2;
+    pos[k + 1] = y + (y - prev[k + 1]) * DAMP - GRAVITY * dt2;
+    pos[k + 2] = z + (z - prev[k + 2]) * DAMP + wz * (0.4 + 0.6 * w) * dt2;
+    prev[k] = x; prev[k + 1] = y; prev[k + 2] = z;
+  }
+  for (let it = 0; it < ITER; it++) {
+    for (let s = 0; s < ne; s++) {
+      const A = ea[s], B = eb[s], a = A * 3, b = B * 3;
+      const dx = pos[b] - pos[a], dy = pos[b + 1] - pos[a + 1], dz = pos[b + 2] - pos[a + 2];
+      const l = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (l < 1e-6) continue;
+      const wa = pin[A] ? 0 : 1, wb = pin[B] ? 0 : 1, sum = wa + wb;
+      if (!sum) continue;
+      const f = ((l - er[s]) / l) * es[s] / sum;
+      pos[a] += dx * f * wa; pos[a + 1] += dy * f * wa; pos[a + 2] += dz * f * wa;
+      pos[b] -= dx * f * wb; pos[b + 1] -= dy * f * wb; pos[b + 2] -= dz * f * wb;
+    }
+  }
+  for (let i = 0; i < n; i++) {                     // collide with the invisible body (in the garment's own space)
+    if (pin[i] || !flag[i]) continue;
+    const k = i * 3, x = pos[k], y = pos[k + 1], z = pos[k + 2];
+    const lx = ie[0] * x + ie[4] * y + ie[8]  * z + ie[12];
+    const ly = ie[1] * x + ie[5] * y + ie[9]  * z + ie[13];
+    const lz = ie[2] * x + ie[6] * y + ie[10] * z + ie[14];
+    const zm = zmin(lx, ly); if (!zm) continue;
+    let d = 0;
+    if (flag[i] > 0 && lz < zm) d = zm - lz; else if (flag[i] < 0 && lz > -zm) d = -zm - lz;
+    if (d) {
+      const mx = e[8] * d, my = e[9] * d, mz = e[10] * d;
+      pos[k] += mx; pos[k + 1] += my; pos[k + 2] += mz;
+      prev[k] += mx; prev[k + 1] += my; prev[k + 2] += mz;
+    }
+  }
+}
+
+/* ============================================================
+   MATERIAL + HANGER + GARMENT ASSEMBLY
+   ============================================================ */
+const weave = (() => {
+  const cv = document.createElement("canvas"); cv.width = cv.height = 16;
+  const g = cv.getContext("2d");
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { const v = (x + y) % 4 < 2 ? 210 : 80; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x * 2, y * 2, 2, 2); }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+})();
+
+function bar(a, b, r, mat) {
+  const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 10), mat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return m;
+}
 
 function makeHanger() {
-  const g = new THREE.Group();
-  const metal = new THREE.MeshStandardMaterial({ color: 0x2b2824, metalness: 0.8, roughness: 0.35 });
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 8, 24, Math.PI * 1.5), metal);
-  hook.position.y = 0.19;
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.1, 8), metal);
-  stem.position.y = 0.07;
-  g.add(hook, stem);
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x3b2f25, roughness: 0.55 });
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 8, 24, Math.PI * 1.5), metal); hook.position.y = 0.19;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.1, 8), metal); stem.position.y = 0.07;
+  const y = 0.012, V = (x, yy) => new THREE.Vector3(x, yy + y, 0);
+  g.add(hook, stem,
+    bar(V(-NECK, 0), V(NECK, 0), 0.014, wood),
+    bar(V(NECK, 0), V(0.68, -topEdge(0.68)), 0.014, wood),
+    bar(V(-NECK, 0), V(-0.68, -topEdge(0.68)), 0.014, wood));
   return g;
 }
 
-// Size of the mesh in its own (geometry) space, used by the shader
-function geometryBounds(source) {
-  const b = new THREE.Box3();
-  source.traverse((o) => {
-    if (o.isMesh) {
-      o.geometry.computeBoundingBox();
-      b.union(o.geometry.boundingBox);
-    }
-  });
-  return b;
-}
+const pivots = [], hoverables = [], cloths = [];
 
-function buildGarment(source, index, gb) {
-  const data = GARMENTS[index];
+GARMENTS.forEach((data, index) => {
   const pivot = new THREE.Group();
   pivot.position.set((index - (GARMENTS.length - 1) / 2) * SPACING, RAIL_Y, 0);
-  pivot.userData = {
-    index, hover: 0, spin: 0,
-    phase: Math.random() * Math.PI * 2,
-    swing: 0, swingVel: 0, prevRotY: null
-  };
-  pivot.add(makeHanger());
+  pivot.userData = { index, hover: 0, spin: 0, phase: Math.random() * 6.28 };
+  pivot.add(makeHanger()); scene.add(pivot); pivot.updateMatrixWorld(true);
 
-  const model = source.clone(true);
+  const c = buildCloth(), e = pivot.matrixWorld.elements;
+  for (let q = 0; q < c.n; q++) {
+    const x = c.local[q * 3], y = c.local[q * 3 + 1], z = c.local[q * 3 + 2];
+    c.pos[q * 3]     = e[0] * x + e[4] * y + e[8]  * z + e[12];
+    c.pos[q * 3 + 1] = e[1] * x + e[5] * y + e[9]  * z + e[13];
+    c.pos[q * 3 + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+  }
+  c.prev.set(c.pos);
 
-  // Scale to a fixed height, then pin the TOP of the mesh to the pivot (0,0,0).
-  const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3(), center = new THREE.Vector3();
-  box.getSize(size); box.getCenter(center);
-  const s = GARMENT_HEIGHT / (size.y || 1);
-  model.scale.setScalar(s);
-  model.position.set(-center.x * s, -box.max.y * s, -center.z * s);
-
-  const material = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color(data.color),
-    roughness: data.roughness,
-    metalness: data.metalness,
-    clearcoat: data.clearcoat,
-    sheen: 1.0,
-    sheenRoughness: 0.8,
-    sheenColor: new THREE.Color(0xffffff),
-    side: THREE.DoubleSide,
-    shadowSide: THREE.DoubleSide
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: data.color, roughness: data.roughness, metalness: 0,
+    sheen: 1, sheenRoughness: 0.8, sheenColor: new THREE.Color(0xffffff),
+    bumpMap: weave, bumpScale: 0.5, side: THREE.DoubleSide, shadowSide: THREE.DoubleSide,
+    emissive: new THREE.Color(0xffffff), emissiveIntensity: 0
   });
+  const mesh = new THREE.Mesh(c.geo, mat);
+  mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
+  mesh.userData.pivot = pivot; scene.add(mesh);
 
-  const u = {
-    uTime:   { value: 0 },
-    uPhase:  { value: pivot.userData.phase },
-    uSwing:  { value: 0 },
-    uAmp:    { value: reduceMotion ? 0 : FABRIC.AMOUNT },
-    uTop:    { value: gb.max.y },
-    uHeight: { value: Math.max(gb.max.y - gb.min.y, 1e-4) },
-    uCx:     { value: (gb.max.x + gb.min.x) / 2 },
-    uHalfW:  { value: Math.max((gb.max.x - gb.min.x) / 2, 1e-4) }
-  };
-  applyFabricShader(material, u);
-  pivot.userData.uniforms = u;
-
-  model.traverse((o) => {
-    if (o.isMesh) {
-      o.material = material;
-      o.castShadow = true;
-      o.receiveShadow = true;
-      o.frustumCulled = false;          // displaced vertices can leave the original bounds
-      o.userData.pivot = pivot;
-      hoverables.push(o);
-    }
-  });
-
-  pivot.add(model);
-  scene.add(pivot);
-  pivots.push(pivot);
-}
-
-function makeFallback() {
-  const geo = new THREE.CylinderGeometry(0.55, 0.62, 1, 32, 1, true);
-  geo.translate(0, -0.5, 0);
-  const g = new THREE.Group(); g.add(new THREE.Mesh(geo));
-  return g;
-}
-
-function buildAll(source) {
-  const gb = geometryBounds(source);
-  GARMENTS.forEach((_, i) => buildGarment(source, i, gb));
-  setActive(0);
-}
-
-function loadModel(urls) {
-  const url = urls[0];
-  new GLTFLoader().load(
-    url,
-    (gltf) => { statusEl.style.display = "none"; buildAll(gltf.scene); },
-    undefined,
-    (err) => {
-      console.warn("Could not load " + url, err);
-      if (urls.length > 1) { loadModel(urls.slice(1)); return; }
-      buildAll(makeFallback());
-      statusEl.style.display = "";
-      statusEl.className = "error";
-      statusEl.textContent = "Couldn’t find tshirt.glb (tried models/ and the main folder). Showing placeholders.";
-    }
-  );
-}
-loadModel(MODEL_URLS);
-
-/* ============================================================
-   NAVIGATION (buttons + arrow keys)
-   ============================================================ */
-function setActive(i) {
-  const n = GARMENTS.length;
-  activeIndex = ((i % n) + n) % n;
-  const p = pivots[activeIndex];
-  if (p) targetCamX = p.position.x * 0.6;
-}
-prevBtn.addEventListener("click", () => setActive(activeIndex - 1));
-nextBtn.addEventListener("click", () => setActive(activeIndex + 1));
-window.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") setActive(activeIndex - 1);
-  if (e.key === "ArrowRight") setActive(activeIndex + 1);
+  Object.assign(pivot.userData, { cloth: c, mat });
+  c.inv = new THREE.Matrix4(); c.mesh = mesh;
+  pivots.push(pivot); hoverables.push(mesh); cloths.push(c);
 });
 
+function refreshMesh(c) {
+  c.geo.attributes.position.needsUpdate = true;
+  c.geo.computeVertexNormals();
+  c.geo.computeBoundingSphere();
+}
+// Let the cloth settle before the first frame so it doesn't visibly drop in
+cloths.forEach((c, i) => {
+  const p = pivots[i]; c.inv.copy(p.matrixWorld).invert();
+  for (let s = 0; s < 90; s++) stepCloth(c, p.matrixWorld.elements, c.inv.elements, 0, 0, 0);
+  refreshMesh(c);
+});
+console.info("Cloth: " + cloths[0].n + " vertices, " + cloths[0].tris + " triangles per tee");
+
 /* ============================================================
-   POINTER + RAYCASTER + HUD
+   NAVIGATION + POINTER + RAYCASTER + HUD
    ============================================================ */
+let activeIndex = 0, camX = 0, targetCamX = 0;
+function setActive(i) {
+  const n = GARMENTS.length; activeIndex = ((i % n) + n) % n;
+  targetCamX = pivots[activeIndex].position.x * 0.6;
+}
+$("#prev-garment").addEventListener("click", () => setActive(activeIndex - 1));
+$("#next-garment").addEventListener("click", () => setActive(activeIndex + 1));
+addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") setActive(activeIndex - 1); if (e.key === "ArrowRight") setActive(activeIndex + 1); });
+
 const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2(0, 0);
-const smoothNdc = new THREE.Vector2(0, 0);
+const ndc = new THREE.Vector2(), smoothNdc = new THREE.Vector2();
 const hudPos = { x: 0, y: 0, tx: 0, ty: 0 };
-let hovered = null;
-let pointerSeen = false;
+let hovered = null, pointerSeen = false, prevSX = 0;
 
 function onPointer(e) {
-  ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
-  ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  hudPos.tx = e.clientX + 18;
-  hudPos.ty = e.clientY + 18;
+  ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  hudPos.tx = e.clientX + 18; hudPos.ty = e.clientY + 18;
   if (!pointerSeen) { hudPos.x = hudPos.tx; hudPos.y = hudPos.ty; pointerSeen = true; }
 }
-window.addEventListener("pointermove", onPointer, { passive: true });
-window.addEventListener("pointerdown", onPointer, { passive: true });
+addEventListener("pointermove", onPointer, { passive: true });
+addEventListener("pointerdown", onPointer, { passive: true });
 document.addEventListener("pointerleave", () => { ndc.set(0, 0); setHover(null); });
 
 function setHover(pivot) {
-  if (pivot === hovered) return;
-  hovered = pivot;
+  if (pivot === hovered) return; hovered = pivot;
   if (pivot) {
     const d = GARMENTS[pivot.userData.index];
-    hudName.textContent = d.name;
-    hudPrice.textContent = d.price;
-    hud.classList.add("visible");
-    canvas.style.cursor = "pointer";
-  } else {
-    hud.classList.remove("visible");
-    canvas.style.cursor = "default";
-  }
+    hudName.textContent = d.name; hudPrice.textContent = d.price;
+    hud.classList.add("visible"); canvas.style.cursor = "pointer";
+  } else { hud.classList.remove("visible"); canvas.style.cursor = "default"; }
 }
 
 /* ============================================================
    ANIMATION LOOP
    ============================================================ */
 const clock = new THREE.Clock();
-const lerp = (a, b, t) => a + (b - a) * t;
-let prevSmoothX = 0;
+let acc = 0;
 
 function animate() {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
-  const k = 1 - Math.pow(0.001, dt);
-  const safeDt = Math.max(dt, 1e-4);
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime, k = 1 - Math.pow(0.001, dt);
 
-  smoothNdc.x = lerp(smoothNdc.x, ndc.x, k * 0.6);
-  smoothNdc.y = lerp(smoothNdc.y, ndc.y, k * 0.6);
-  const mouseVel = THREE.MathUtils.clamp((smoothNdc.x - prevSmoothX) / safeDt, -6, 6);
-  prevSmoothX = smoothNdc.x;
+  smoothNdc.x = lerp(smoothNdc.x, ndc.x, k * 0.6); smoothNdc.y = lerp(smoothNdc.y, ndc.y, k * 0.6);
+  const mouseVel = THREE.MathUtils.clamp((smoothNdc.x - prevSX) / Math.max(dt, 1e-4), -6, 6);
+  prevSX = smoothNdc.x;
 
-  // Camera glides to the selected garment
   camX = lerp(camX, targetCamX, k * 0.8);
-  camera.position.set(camX, 1.2, 9.5);
-  camera.lookAt(LOOK_AT.x + camX, LOOK_AT.y, LOOK_AT.z);
+  camera.position.set(camX, 1.2, Math.max(7.5, 9.5 / camera.aspect));
+  camera.lookAt(camX, 0.9, 0);
 
-  // Raycast
-  if (pivots.length && pointerSeen) {
+  if (pointerSeen) {
     raycaster.setFromCamera(ndc, camera);
     const hit = raycaster.intersectObjects(hoverables, false)[0];
     setHover(hit ? hit.object.userData.pivot : null);
   }
 
+  // Hanger rotation (the cloth follows through the pinned shoulders)
   pivots.forEach((p) => {
-    const ud = p.userData;
-    const isHover = p === hovered;
-    const isActive = ud.index === activeIndex;
+    const ud = p.userData, isHover = p === hovered;
     ud.hover = lerp(ud.hover, isHover ? 1 : 0, k * 1.2);
-    const h = ud.hover;
-
-    const dx = smoothNdc.x - (p.position.x - camX) / 5;
-    const turnToCursor = THREE.MathUtils.clamp(dx, -1, 1) * 0.5;
-    const sway = reduceMotion ? 0 : Math.sin(t * 0.8 + ud.phase) * 0.05;
-    if (isHover && !reduceMotion) ud.spin += dt * 1.1;
-
-    p.rotation.y = turnToCursor + sway + ud.spin * h;
-    p.rotation.z = lerp(p.rotation.z, -smoothNdc.x * 0.08 * (0.4 + h), k);
-    p.rotation.x = lerp(p.rotation.x, smoothNdc.y * 0.06, k);
-    p.scale.setScalar(lerp(p.scale.x, 1 + h * 0.07 + (isActive ? 0.04 : 0), k));
-
-    // --- Fabric spring: cloth trails behind turning and cursor motion, then settles ---
-    if (ud.prevRotY === null) ud.prevRotY = p.rotation.y;
-    const angVel = THREE.MathUtils.clamp((p.rotation.y - ud.prevRotY) / safeDt, -8, 8);
-    ud.prevRotY = p.rotation.y;
-
-    const drive = -angVel * 0.35 + mouseVel * 0.25 * (0.4 + h) + Math.sin(t * 0.7 + ud.phase) * 0.06;
-    ud.swingVel += (-FABRIC.STIFFNESS * ud.swing - FABRIC.DAMPING * ud.swingVel + FABRIC.STIFFNESS * drive) * dt;
-    ud.swing = THREE.MathUtils.clamp(ud.swing + ud.swingVel * dt, -1.5, 1.5);
-
-    ud.uniforms.uTime.value = t;
-    ud.uniforms.uSwing.value = ud.swing;
+    const turn = THREE.MathUtils.clamp(smoothNdc.x - (p.position.x - camX) / 5, -1, 1) * 0.5;
+    if (isHover && !reduce) ud.spin += dt * 1.1;
+    p.rotation.y = turn + (reduce ? 0 : Math.sin(t * 0.8 + ud.phase) * 0.05) + ud.spin * ud.hover;
+    p.rotation.z = lerp(p.rotation.z, -smoothNdc.x * 0.05, k);
+    p.updateMatrixWorld(true);
+    ud.mat.emissiveIntensity = 0.05 * ud.hover;
   });
 
-  // Smooth HUD follow
-  hudPos.x = lerp(hudPos.x, hudPos.tx, k * 1.5);
-  hudPos.y = lerp(hudPos.y, hudPos.ty, k * 1.5);
-  const maxX = window.innerWidth - hud.offsetWidth - 8;
-  const maxY = window.innerHeight - hud.offsetHeight - 8;
-  hud.style.transform =
-    "translate3d(" + Math.min(hudPos.x, maxX).toFixed(1) + "px," + Math.min(hudPos.y, maxY).toFixed(1) + "px,0)";
+  // Fixed-step cloth simulation
+  acc = Math.min(acc + dt, DT * 2);
+  const gust = reduce ? 0 : THREE.MathUtils.clamp(mouseVel * 2.5, -10, 10);
+  while (acc >= DT) {
+    acc -= DT;
+    pivots.forEach((p) => {
+      const ud = p.userData, c = ud.cloth;
+      c.inv.copy(p.matrixWorld).invert();
+      const wx = reduce ? 0 : gust + Math.sin(t * 0.8 + ud.phase) * 0.6;
+      const wz = reduce ? 0 : Math.sin(t * 0.55 + ud.phase * 1.3) * 1.2 + 0.4 + ud.hover * 2;
+      stepCloth(c, p.matrixWorld.elements, c.inv.elements, t, wx, wz);
+    });
+  }
+  cloths.forEach(refreshMesh);
+
+  hudPos.x = lerp(hudPos.x, hudPos.tx, k * 1.5); hudPos.y = lerp(hudPos.y, hudPos.ty, k * 1.5);
+  hud.style.transform = `translate3d(${Math.min(hudPos.x, innerWidth - hud.offsetWidth - 8).toFixed(1)}px,${Math.min(hudPos.y, innerHeight - hud.offsetHeight - 8).toFixed(1)}px,0)`;
 
   renderer.render(scene, camera);
 }
+setActive(0);
 animate();
 </script>
 </body>
